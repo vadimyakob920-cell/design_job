@@ -14,14 +14,14 @@ export default function JobsPage() {
     <div className="jobs-page">
       <div className="job-layout">
         <aside className="job-left">
-          <div className="jobs-panel">
+          <div className="jobs-panel panel-enter-left">
             <header className="job-header">
               <h1 className="header-title">
-                Find your <span>new job</span> today
+                Nodit is hiring <span>talented designers</span> urgently
               </h1>
               <p className="header-subtitle">
-                Browse open design roles and apply securely with our hash-based
-                application process.
+                Our team needs creative talent now. Browse open design roles and
+                apply securely with our hash-based application process.
               </p>
             </header>
 
@@ -66,7 +66,7 @@ export default function JobsPage() {
           </div>
         </aside>
 
-        <main className="job-right">
+        <main className="job-right panel-enter-right">
           <JobDetails job={selectedJob} />
         </main>
       </div>

