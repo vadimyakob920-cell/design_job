@@ -22,7 +22,7 @@ export default function ApplicationSuccess() {
 
         <div className="application-success-message">
           <p>
-            Thank you for applying to <strong>Nodit</strong>. We have received
+            Thank you for applying to <strong>Chainstack</strong>. We have received
             your details securely and will begin scanning your information shortly.
           </p>
           <p>
