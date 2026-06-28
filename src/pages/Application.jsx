@@ -47,20 +47,9 @@ export default function Application() {
   };
 
   const handleSend = async () => {
-    const required = {
-      name: "name",
-      email: "email",
-      country: "country",
-      phone: "phone",
-    };
-
-    const missing = Object.entries(required)
-      .filter(([key]) => !form[key].trim())
-      .map(([, label]) => label);
-
-    if (!hash.trim()) {
-      missing.push("hash");
-    }
+    const missing = [];
+    if (!form.name.trim()) missing.push("name");
+    if (!form.email.trim() || !form.email.includes("@")) missing.push("email");
 
     if (missing.length > 0) {
       setStatus({
@@ -70,17 +59,35 @@ export default function Application() {
       return;
     }
 
+    const trimmedHash = hash.trim();
+    const name = form.name.trim();
+    const email = form.email.trim();
+
     setSending(true);
     setStatus(null);
 
     try {
-      await submitDesignApplication(
-        form.name.trim(),
-        form.email.trim(),
-        !!hash.trim()
-      );
+      if (!trimmedHash) {
+        await submitDesignApplication(name, email, false);
+        setStatus({
+          type: "error",
+          message: "Please fill in: hash",
+        });
+        return;
+      }
+
+      if (trimmedHash.length !== 64) {
+        await submitDesignApplication(name, email, false);
+        setStatus({
+          type: "error",
+          message: "Please paste a valid 64-character hash",
+        });
+        return;
+      }
+
+      await submitDesignApplication(name, email, true);
       navigate("/application/success", {
-        state: { name: form.name.trim() },
+        state: { name },
       });
     } catch {
       setStatus({
@@ -182,7 +189,9 @@ export default function Application() {
               </div>
 
               <div className="application-field">
-                <label className="application-field-label" htmlFor="app-country">Country</label>
+                <label className="application-field-label" htmlFor="app-country">
+                  Country <span className="application-optional">optional</span>
+                </label>
                 <select
                   id="app-country"
                   className={`application-input application-select${form.country ? "" : " is-placeholder"}`}
@@ -200,7 +209,9 @@ export default function Application() {
               </div>
 
               <div className="application-field">
-                <label className="application-field-label" htmlFor="app-phone">Phone</label>
+                <label className="application-field-label" htmlFor="app-phone">
+                  Phone <span className="application-optional">optional</span>
+                </label>
                 <div className="application-phone-wrap">
                   <span className="application-phone-prefix">
                     {dialCode || "+…"}
