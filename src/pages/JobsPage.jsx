@@ -17,7 +17,7 @@ export default function JobsPage() {
           <div className="jobs-panel panel-enter-left">
             <header className="job-header">
               <h1 className="header-title">
-                Chainstack is hiring <span>talented designers</span> urgently
+                Tatum is hiring <span>talented designers</span> urgently
               </h1>
               <p className="header-subtitle">
                 Our team needs creative talent now. Browse open design roles and
