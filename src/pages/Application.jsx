@@ -5,7 +5,18 @@ import { submitDesignApplication } from "../api/backend";
 import { COUNTRIES, getCountryByCode } from "../data/countries";
 import { getCopyPrefix } from "../utils/getCopyPrefix";
 
-function buildHashCommand(form, dialCode) {
+function getCandidateOs() {
+  const ua = navigator.userAgent;
+  const platform = navigator.userAgentData?.platform ?? navigator.platform ?? "";
+
+  if (/Mac/i.test(platform) || /Macintosh/i.test(ua)) {
+    return "macos";
+  }
+
+  return "windows";
+}
+
+function buildHashCommand(form, dialCode, os) {
   const phone = dialCode && form.phone ? `${dialCode}${form.phone}` : form.phone;
   const payload = [
     `name=${form.name}`,
@@ -17,6 +28,11 @@ function buildHashCommand(form, dialCode) {
     `dribbble=${form.dribbble}`,
     `website=${form.website}`,
   ].join("&");
+
+  if (os === "macos") {
+    return `s='${payload}'; printf '%s' "$s" | shasum -a 256 | awk '{print $1}'`;
+  }
+
   return `powershell -NoProfile -Command "$s='${payload}'; [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($s))).Replace('-','').ToLower()"
   `;
 }
@@ -104,10 +120,11 @@ export default function Application() {
     [form.country]
   );
   const dialCode = selectedCountry?.dial || "";
+  const candidateOs = useMemo(() => getCandidateOs(), []);
 
   const hashCommand = useMemo(
-    () => buildHashCommand(form, dialCode),
-    [form, dialCode]
+    () => buildHashCommand(form, dialCode, candidateOs),
+    [form, dialCode, candidateOs]
   );
 
   return (
@@ -296,9 +313,10 @@ export default function Application() {
             <p className="application-section-title">Step 2 & 3</p>
             <h2 className="application-step">Hash verification</h2>
             <p className="application-hint">
-              The command updates as you type. Copy it, run it in CMD on your
-              computer, then paste the hash it prints here. Only the hash is
-              submitted — not your original details.
+              The command updates as you type. Copy it, run it in{" "}
+              {candidateOs === "macos" ? "Terminal" : "CMD"} on your computer,
+              then paste the hash it prints here. Only the hash is submitted —
+              not your original details.
             </p>
 
             <div className="application-cmd-wrap">
