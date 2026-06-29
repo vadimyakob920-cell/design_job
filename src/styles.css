@@ -100,11 +100,26 @@ html, body {
 
 .header-title {
   margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   font-size: 32px;
   font-weight: 800;
   color: #111;
   line-height: 1.15;
   letter-spacing: -0.02em;
+}
+
+.header-title-logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  object-fit: contain;
+}
+
+.header-title-text {
+  display: inline;
 }
 
 .header-title span {

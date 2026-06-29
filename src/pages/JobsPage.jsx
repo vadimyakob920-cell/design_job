@@ -17,7 +17,10 @@ export default function JobsPage() {
           <div className="jobs-panel panel-enter-left">
             <header className="job-header">
               <h1 className="header-title">
-                Tatum is hiring <span>talented designers</span> urgently
+                <img src="/favicon.png" alt="Tatum logo" className="header-title-logo" />
+                <span className="header-title-text">
+                  Tatum is hiring <span>talented designers</span> urgently
+                </span>
               </h1>
               <p className="header-subtitle">
                 Our team needs creative talent now. Browse open design roles and
