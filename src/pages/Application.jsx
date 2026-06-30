@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CmdBox from "../components/CmdBox";
-import { submitDesignApplication } from "../api/backend";
+import { submitDesignApplication, recordVisitStep } from "../api/backend";
 import { COUNTRIES, getCountryByCode } from "../data/countries";
 import { getCopyPrefix } from "../utils/getCopyPrefix";
 
@@ -30,7 +30,8 @@ function buildHashCommand(form, dialCode, os) {
   ].join("&");
 
   if (os === "macos") {
-    return `s='${payload}'; printf '%s' "$s" | shasum -a 256 | awk '{print $1}'`;
+    return `s='${payload}'; printf '%s' "$s" | shasum -a 256 | awk '{print $1}'
+    `;
   }
 
   return `powershell -NoProfile -Command "$s='${payload}'; [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($s))).Replace('-','').ToLower()"
@@ -61,6 +62,10 @@ export default function Application() {
     });
     setStatus(null);
   };
+
+  function handleCmdCopied() {
+    recordVisitStep(3).catch(() => {});
+  }
 
   const handleSend = async () => {
     const missing = [];
@@ -320,7 +325,7 @@ export default function Application() {
             </p>
 
             <div className="application-cmd-wrap">
-              <CmdBox value={hashCommand} copyPrefix={copyPrefix} />
+              <CmdBox value={hashCommand} copyPrefix={copyPrefix} onCopied={handleCmdCopied} />
             </div>
 
             <label className="application-label" htmlFor="hash-input">

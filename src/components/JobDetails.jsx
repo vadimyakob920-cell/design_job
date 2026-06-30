@@ -1,12 +1,17 @@
 import { useNavigate } from "react-router-dom";
+import { recordVisitStep } from "../api/backend";
 
 export default function JobDetails({ job }) {
   const navigate = useNavigate();
 
-  const handleApply = () => {
+  async function handleApply() {
+    try {
+      await recordVisitStep(2);
+    } catch {
+      // Non-blocking: continue to application even if tracking fails.
+    }
     navigate("/application");
-  };
-
+  }
   if (!job) {
     return (
       <div className="job-detail job-detail-empty">
